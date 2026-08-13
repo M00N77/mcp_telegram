@@ -1,0 +1,11 @@
+﻿venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+data.db*
+rules.md
+agents.md
+roadmap.md
+plan.md
+setup.ps1
