@@ -14,7 +14,10 @@ class TelegramService:
         chats = await self.repo.get_known_chats()
         if not chats:
             return "Нет известных чатов."
-        return "\n".join([f"{name} (ID: {chat_id})" for chat_id, name in chats])
+        return "\n".join([f"{name} (ID: {cid})" for cid, name in chats])
+
+    async def get_chat_name(self, chat_id: int) -> str:
+        return await self.repo.get_chat_name(chat_id)
         
     async def get_recent_messages(self, chat_id: int, limit: int = 20) -> str:
         # Выборка в обратном порядке по времени (новые сначала)

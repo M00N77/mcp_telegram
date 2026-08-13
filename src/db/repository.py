@@ -35,6 +35,11 @@ class TelegramRepository:
         async with self.conn.execute("SELECT chat_id, chat_name FROM chats ORDER BY chat_name") as cursor:
             return await cursor.fetchall()
 
+    async def get_chat_name(self, chat_id: int) -> str:
+        async with self.conn.execute("SELECT chat_name FROM chats WHERE chat_id = ?", (chat_id,)) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else "Unknown Chat"
+
     async def get_recent_messages(self, chat_id: int, limit: int) -> list:
         async with self.conn.execute(
             """
