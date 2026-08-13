@@ -63,3 +63,18 @@ async def send_message(chat_id: int, text: str, ctx: Context) -> str:
             return f"Отправка отменена (ошибка подтверждения: {e})"
 
     return await _service.send_message(chat_id, text)
+
+@mcp.tool()
+async def get_chat_info(chat_id: int) -> str:
+    """Получить детальную информацию о чате напрямую из Telegram Bot API.
+    
+    В отличие от get_known_chats, делает живой запрос к Telegram (getChat) и работает 
+    даже для тех чатов, которых нет в нашей локальной истории, если бот имеет к ним доступ.
+    Возвращает тип чата, название, описание и количество участников (для групп/каналов).
+    
+    Args:
+        chat_id: Идентификатор чата (число)
+    """
+    if not _service:
+        return "Сервис не инициализирован."
+    return await _service.get_chat_info(chat_id)

@@ -35,3 +35,31 @@ class TelegramService:
         except Exception as e:
             logger.error(f"Failed to send message: {e}")
             return f"Ошибка при отправке сообщения: {str(e)}"
+
+    async def get_chat_info(self, chat_id: int) -> str:
+        try:
+            chat_data = await self.client.get_chat(chat_id)
+            
+            chat_type = chat_data.get("type", "unknown")
+            title = chat_data.get("title") or chat_data.get("first_name", "Unknown")
+            username = chat_data.get("username")
+            description = chat_data.get("description") or chat_data.get("bio")
+            
+            lines = [f"Тип: {chat_type}", f"Название: {title}"]
+            
+            if username:
+                lines.append(f"Username: @{username}")
+            if description:
+                lines.append(f"Описание: {description}")
+                
+            if chat_type in ("group", "supergroup", "channel"):
+                try:
+                    member_count = await self.client.get_chat_member_count(chat_id)
+                    lines.append(f"Участников: {member_count}")
+                except Exception as e:
+                    logger.warning(f"Could not get member count for {chat_id}: {e}")
+            
+            return "\n".join(lines)
+        except Exception as e:
+            logger.error(f"Failed to get chat info for {chat_id}: {e}")
+            return f"Ошибка получения информации о чате: {str(e)}"

@@ -101,6 +101,16 @@ class TelegramClient:
         }
         return await self._request("POST", "sendMessage", json=payload)
 
+    async def get_chat(self, chat_id: int) -> Dict[str, Any]:
+        """Calls getChat to get detailed information about a chat."""
+        payload = {"chat_id": chat_id}
+        return await self._request("POST", "getChat", json=payload)
+
+    async def get_chat_member_count(self, chat_id: int) -> int:
+        """Calls getChatMemberCount to get the number of members in a chat."""
+        payload = {"chat_id": chat_id}
+        return await self._request("POST", "getChatMemberCount", json=payload)
+
 
 if __name__ == "__main__":
     # Временный тестовый скрипт для локальной проверки
