@@ -1,6 +1,6 @@
 import logging
 from db.repository import TelegramRepository
-from telegram.client import TelegramClient
+from telegram.client import TelegramClient, TelegramRateLimitError, TelegramForbiddenError, TelegramBadRequestError, TelegramUnauthorizedError
 from utils.time import format_history
 
 logger = logging.getLogger(__name__)
@@ -32,6 +32,18 @@ class TelegramService:
             msg_id = result.get("message_id")
             logger.info(f"Message sent to {chat_id}, id={msg_id}")
             return f"Сообщение успешно отправлено. ID: {msg_id}"
+        except TelegramUnauthorizedError:
+            logger.error("Unauthorized: Invalid bot token.")
+            return "Сервер неверно настроен: недействительный токен бота."
+        except TelegramRateLimitError as e:
+            logger.error(f"Rate limit exceeded: {e}")
+            return f"Превышен лимит Telegram. Повторите через {e.retry_after} сек."
+        except TelegramForbiddenError as e:
+            logger.error(f"Forbidden: {e}")
+            return "Не удалось отправить: бот заблокирован или не имеет доступа к чату."
+        except TelegramBadRequestError as e:
+            logger.error(f"Bad Request: {e}")
+            return f"Ошибка запроса: {e.description} (проверьте chat_id)."
         except Exception as e:
             logger.error(f"Failed to send message: {e}")
             return f"Ошибка при отправке сообщения: {str(e)}"
@@ -60,6 +72,15 @@ class TelegramService:
                     logger.warning(f"Could not get member count for {chat_id}: {e}")
             
             return "\n".join(lines)
+        except TelegramBadRequestError as e:
+            logger.error(f"Bad Request for chat {chat_id}: {e}")
+            return f"Чат не найден или недоступен (проверьте chat_id): {e.description}"
+        except TelegramUnauthorizedError:
+            logger.error(f"Unauthorized while getting chat {chat_id}")
+            return "Сервер неверно настроен: недействительный токен бота."
+        except TelegramForbiddenError:
+            logger.error(f"Forbidden while getting chat {chat_id}")
+            return "Нет доступа к чату (проверьте права бота)."
         except Exception as e:
             logger.error(f"Failed to get chat info for {chat_id}: {e}")
             return f"Ошибка получения информации о чате: {str(e)}"
