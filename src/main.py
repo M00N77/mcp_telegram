@@ -49,10 +49,10 @@ async def lifespan(app_state: AppState):
     await client.start()
     
     try:
-        from telegram.client import TelegramUnauthorizedError
+        from telegram.client import TelegramUnauthorizedError, TelegramBadRequestError
         await client.get_me()
         await client.delete_webhook()
-    except TelegramUnauthorizedError:
+    except (TelegramUnauthorizedError, TelegramBadRequestError):
         sys.stderr.write("Неверный TELEGRAM_BOT_TOKEN: сервер остановлен\n")
         await client.close()
         await close_db(conn)
