@@ -29,6 +29,9 @@ async def watchdog(listener: TelegramListener, app_state: AppState):
     """Воскрешает listener, если он умер при работающем приложении."""
     while app_state.running:
         if app_state.listener_task and app_state.listener_task.done() and app_state.running:
+            if getattr(listener, "fatal_error", False):
+                logger.error("Listener died due to a fatal error (401). Watchdog stopping.")
+                break
             logger.error("Listener task died unexpectedly! Restarting...")
             app_state.listener_task = asyncio.create_task(listener.start())
         await asyncio.sleep(5)
@@ -44,6 +47,16 @@ async def lifespan(app_state: AppState):
     repo = TelegramRepository(conn)
     client = TelegramClient(settings.telegram_bot_token)
     await client.start()
+    
+    try:
+        from telegram.client import TelegramUnauthorizedError
+        await client.get_me()
+        await client.delete_webhook()
+    except TelegramUnauthorizedError:
+        sys.stderr.write("Неверный TELEGRAM_BOT_TOKEN: сервер остановлен\n")
+        await client.close()
+        await close_db(conn)
+        sys.exit(1)
     
     listener = TelegramListener(client, repo)
     app_state.running = True

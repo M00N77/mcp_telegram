@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from .client import TelegramClient, TelegramAPIError, TelegramRateLimitError
+from .client import TelegramClient, TelegramAPIError, TelegramRateLimitError, TelegramUnauthorizedError
 from .parser import parse_update
 from db.repository import TelegramRepository
 from config import settings
@@ -12,6 +12,7 @@ class TelegramListener:
         self.client = client
         self.repo = repo
         self.running = False
+        self.fatal_error = False
 
     async def start(self):
         """Запуск цикла Long Polling."""
@@ -46,6 +47,10 @@ class TelegramListener:
                     # Сохраняем offset после успешной обработки батча апдейтов
                     await self.repo.set_offset(offset)
                     
+            except TelegramUnauthorizedError as e:
+                logger.error(f"FATAL: Telegram API Error 401 (Unauthorized): {e}. Stopping listener.")
+                self.fatal_error = True
+                break
             except TelegramRateLimitError as e:
                 logger.warning(f"Rate limited (429). Waiting for {e.retry_after}s.")
                 await asyncio.sleep(e.retry_after)
@@ -55,7 +60,7 @@ class TelegramListener:
                 backoff = min(backoff * 2, 60.0)
             except asyncio.CancelledError:
                 logger.info("Listener task cancelled.")
-                break
+                raise
             except Exception as e:
                 logger.exception(f"Unexpected error in listener: {e}. Retrying in {backoff}s.")
                 await asyncio.sleep(backoff)
